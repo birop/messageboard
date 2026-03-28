@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const MAX_MESSAGE_LENGTH = 500;
+
 function formatDate(dateString) {
   const date = new Date(dateString);
 
@@ -124,14 +126,16 @@ export default function HomePage() {
             id="message"
             name="message"
             rows="4"
-            maxLength="500"
+            maxLength={MAX_MESSAGE_LENGTH}
             placeholder="Irj be egy uzenetet..."
             value={content}
             onChange={(event) => setContent(event.target.value)}
             disabled={isSaving}
           />
           <div className="form-footer">
-            <span className="hint">{content.trim().length}/500 karakter</span>
+            <span className="hint">
+              {content.trim().length}/{MAX_MESSAGE_LENGTH} karakter
+            </span>
             <button type="submit" disabled={isSaving || !content.trim()}>
               {isSaving ? "Mentes..." : "Mentes"}
             </button>

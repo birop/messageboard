@@ -8,6 +8,7 @@ Egyszeru, publikusan elerheto uzenofal `Next.js` + `Supabase` + `Vercel` alapon.
 - uzenetek listazasa forditott idorendben
 - bejegyzes torlese egy kattintassal
 - szerveroldali API route-ok a Supabase elereshez
+- alapveto security hardening XSS/CSRF jellegu tamadasok ellen
 
 ## Technologia
 
@@ -78,3 +79,12 @@ Mivel ez az MVP teljesen publikus, engedelyezd a megfelelo RLS policy-kat vagy k
 - `GET /api/messages`
 - `POST /api/messages`
 - `DELETE /api/messages/:id`
+
+## Biztonsagi megjegyzesek
+
+- A UI Reacten keresztul rendereli az uzeneteket, nem `dangerouslySetInnerHTML`-lal, igy a beirt HTML vagy script nem fut le.
+- Az adatbazismuveletek a Supabase kliensen keresztul mennek, nem kezzel osszefuzott SQL-lel, igy a klasszikus SQL injection kockazat jelentosen csokken.
+- A szerveroldal ellenorzi a JSON content type-ot, az uzenethosszt es a torleshez kapott UUID formatumat.
+- A mutalo API hivasok same-origin ellenorzest kapnak, ami csokkenti a cross-site kereskuldes kockazatat.
+- A middleware biztonsagi headereket allit be, koztuk CSP, `X-Frame-Options`, `nosniff` es `Referrer-Policy`.
+- Mivel az alkalmazas publikus es anonim, spam/bot terheles ellen tovabbi vedelemhez kulon rate limit vagy CAPTCHA lenne a kovetkezo lepes.

@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 
 import { createSupabaseServerClient } from "../../../lib/supabase";
+import {
+  assertJsonRequest,
+  assertSameOrigin,
+  getNoStoreHeaders,
+  validateMessageContent
+} from "../../../lib/message-security";
 
 export async function GET() {
   try {
@@ -14,28 +20,24 @@ export async function GET() {
       throw error;
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data }, { headers: getNoStoreHeaders() });
   } catch (error) {
     return NextResponse.json(
       {
-        error: error.message || "Nem sikerult lekerdezni az uzeneteket."
+        error: "Nem sikerult lekerdezni az uzeneteket."
       },
-      { status: 500 }
+      { status: 500, headers: getNoStoreHeaders() }
     );
   }
 }
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const content = typeof body.content === "string" ? body.content.trim() : "";
+    assertSameOrigin(request);
+    assertJsonRequest(request);
 
-    if (!content) {
-      return NextResponse.json(
-        { error: "Ures uzenet nem mentheto." },
-        { status: 400 }
-      );
-    }
+    const body = await request.json();
+    const content = validateMessageContent(body.content);
 
     const supabase = createSupabaseServerClient();
     const { data, error } = await supabase
@@ -48,13 +50,27 @@ export async function POST(request) {
       throw error;
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    return NextResponse.json(
+      { data },
+      { status: 201, headers: getNoStoreHeaders() }
+    );
   } catch (error) {
+    const status =
+      error.message === "Ures uzenet nem mentheto." ||
+      error.message === "A kerelem torzsenek JSON formatumuak kell lennie." ||
+      error.message === "Cross-origin kerest nem engedelyezett." ||
+      error.message?.includes("legfeljebb")
+        ? 400
+        : 500;
+
     return NextResponse.json(
       {
-        error: error.message || "Nem sikerult elmenteni az uzenetet."
+        error:
+          status === 400
+            ? error.message
+            : "Nem sikerult elmenteni az uzenetet."
       },
-      { status: 500 }
+      { status, headers: getNoStoreHeaders() }
     );
   }
 }
